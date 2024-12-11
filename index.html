@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa centrado en Sevilla</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    #map {
+      height: 400px;
+      width: 60%;
+      margin: 20px auto;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #search-container {
+      margin-bottom: 20px;
+    }
+    #locationInput {
+      width: 300px;
+      padding: 5px;
+    }
+    #searchButton {
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="search-container">
+    <input id="locationInput" type="text" placeholder="Ingresa una ubicación" />
+    <button id="searchButton">Buscar</button>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Inicializamos el mapa
+    const map = L.map('map').setView([37.3891, -5.9845], 13); // Coordenadas iniciales de Sevilla
+
+    // Agregamos un fondo de mapa de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    // Marcador inicial para Sevilla
+    let marker = L.marker([37.3891, -5.9845]).addTo(map);
+
+    // Función para buscar una ubicación y centrar el mapa
+    async function getLocation(query) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'YourAppName (your-email@example.com)', // Reemplaza con tu información
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error en la solicitud: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.length === 0) {
+          alert('No se encontraron ubicaciones para la consulta.');
+          return;
+        }
+
+        // Extraemos la ubicación
+        const location = data[0];
+        const lat = parseFloat(location.lat);
+        const lon = parseFloat(location.lon);
+
+        // Centramos el mapa en la nueva ubicación
+        map.setView([lat, lon], 13);
+
+        // Movemos el marcador al nuevo lugar
+        marker.setLatLng([lat, lon]);
+
+        alert(`Ubicación encontrada: ${location.display_name}`);
+      } catch (error) {
+        console.error('Error al consumir la API de Nominatim:', error);
+        alert('Hubo un error al buscar la ubicación.');
+      }
+    }
+
+    // Configuramos el evento del botón
+    document.getElementById('searchButton').addEventListener('click', () => {
+      const query = document.getElementById('locationInput').value;
+      if (query.trim() !== '') {
+        getLocation(query);
+      } else {
+        alert('Por favor, ingresa una ubicación.');
+      }
+    });
+  </script>
+</body>
+</html>
